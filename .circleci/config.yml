@@ -240,8 +240,10 @@ jobs:
       - install_ansible
       - add_sh_keys:
           fingerprints: ["4c:48:d4:f1:44:76:ca:32:ec:78:d3:a5:4c:a5:d0:d7"]
-      - attach workspace:
-          at: ~/
+      - persist_to_workspace:
+          root: ~/
+          paths:
+            - ".circleci/ansible/inventory.txt"
       - run:
           name: Install dependencies
           command: |
