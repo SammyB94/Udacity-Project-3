@@ -197,13 +197,13 @@ jobs:
       - checkout
       - install_awscli
       - run:
-          name: Ensuring Backend Exist
-          command:
-            aws cloudformation deploy 
-            --template-file .circleci/files/backend.yml 
-            --stack-name "udapeople-backend-${CIRCLE_WORKFLOW_ID:0:7}" 
+          name: Ensure back-end infrastructure exists
+          command: |
+            aws cloudformation deploy \
+            --template-file .circleci/files/backend.yml \
+            --tags project=udapeople \
+            --stack-name "udapeople-frontend-${CIRCLE_WORKFLOW_ID:0:7}" \
             --parameter-overrides ID="${CIRCLE_WORKFLOW_ID:0:7}"  
-            --tags project=udapeople  
       - run:
           name: Ensure front-end infrastructure exist
           command: |
@@ -220,6 +220,7 @@ jobs:
               --query 'Reservations[*].Instances[*].PublicIpAddress' \
               --output text)
             echo $BACKEND_PUBLIC_IP >> .circleci/ansible/inventory.txt
+            echo $BACKEND_PUBLIC_IP
             cat .circleci/ansible/inventory.txt
             
       - persist_to_workspace:
