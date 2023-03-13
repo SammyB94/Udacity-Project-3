@@ -260,7 +260,7 @@ jobs:
       - persist_to_workspace:
           root: ~/
           paths:
-            - "project/.circleci/ansible/inventory.txt"
+            - ".circleci/ansible/inventory.txt"
       - run:
           name: Install dependencies
           command: |
@@ -357,6 +357,7 @@ jobs:
             cd backend
             npm run build 
             tar -czf artifact.tar.gz dist/* package*
+            ls -l
 
             cd ..
             cp backend/artifact.tar.gz .circleci/ansible/roles/deploy/files
