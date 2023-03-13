@@ -164,45 +164,31 @@ jobs:
             
   scan-frontend:
     docker:
-      - image: cimg/node:13.8.0
+      - image: circleci/node:13.8.0
     steps:
       - checkout
       - restore_cache:
-          keys:
-            - frontend-deps-{{ checksum "frontend/package-lock.json" }}
+          keys: [frontend-build]
       - run:
-          name: Install dependencies
+          name: Scanning frontend
           command: |
             cd frontend
             npm install
-      - run:
-          name: Analyze Frontend
-          command: |
-            cd frontend
-            npm audit fix --force --audit-level=critical
-      
-
+            npm audit fix --audit-level=critical --force
+            
   scan-backend:
     docker:
-      - image: cimg/node:13.8.0
+      - image: circleci/node:13.8.0
     steps:
       - checkout
       - restore_cache:
-          keys:
-            - backend-deps-{{ checksum "backend/package-lock.json" }}
+          keys: [backend-build]
       - run:
-          name: Install dependencies
-          command: |
-            cd backend 
-            npm install
-      - run:
-          name: Analyze Backend
+          name: Scanning backend
           command: |
             cd backend
             npm install
-            npm audit fix --force --auti-level=critical
-            npm audit fix --force --audit-level=critical
-            npm audit --audit-level=critical
+            npm audit fix --audit-level=critical --force
       
 
   deploy-infrastructure:
