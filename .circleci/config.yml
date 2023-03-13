@@ -37,7 +37,7 @@ commands:
             sudo npm install --global n
             sudo n 13.8.0
 
-  destroy_environment:
+  destroy-environment:
     parameters:
       workflowID:
         type: string
@@ -245,7 +245,7 @@ jobs:
           root: ~/
           paths:
             - project/.circleci/ansible/inventory.txt
-      - destroy_environment
+      - destroy-environment
          
 
   configure-infrastructure:
@@ -267,7 +267,7 @@ jobs:
             cd .circleci/ansible
             cat inventory.txt
             ansible-playbook -i inventory.txt configure-server.yml
-      - destroy_environment 
+      - destroy-environment 
 
   run-migrations:
     docker:
@@ -295,7 +295,7 @@ jobs:
               echo "No migrations are pending"
             fi
      # Here's where you will add some code to rollback on failure  
-      - destroy_environment
+      - destroy-environment
       - revert-migrations
              
 
@@ -329,26 +329,50 @@ jobs:
             cd frontend
             npm run build
             aws s3 cp dist s3://udapeople-${CIRCLE_WORKFLOW_ID:0:7} --recursive 
-      #- destroy-environment
+      - destroy-environment
       - revert-migrations    
                     
-  #deploy-backend:
-    #docker:
-      # Docker image here that supports Ansible
-    #steps:
-      # Checkout code from git
-      # Add ssh keys with fingerprint
-      # attach workspace
-      #- run:
-          #name: Install dependencies
-          #command: |
-            # your code here
-      #- run:
-          #name: Deploy backend
-          #command: |
-            # your code here
-      # Here's where you will add some code to rollback on failure  
+  deploy-backend:
+    docker:
+      - image: cimg/python:3.10
+    steps:
+      - checkout
+      - install_ansible
+      - install_awscli
+      - install_nodejs
+      - restore_cache:
+          keys: [backend-deps]
+      - add_ssh_keys:
+          fingerprints: ["7a:13:40:7a:84:05:21:f0:35:ed:ec:ac:7b:b3:51:4d"]
+      - attach_workspace:
+          at: ~/
+      - run:
+          name: Install dependencies
+          command: |
+            cd backend
+            npm install
+      - run:
+          name: Package Backend
+          command: |
+            cd backend
+            npm run build 
+            tar -czf artifact.tar.gz dist/* package*
 
+            cd ..
+            cp backend/artifact.tar.gz .circleci/ansible/roles/deploy/files
+      - run:
+          name: Deploy backend
+          command: |
+            export TYPEORM_MIGRATIONS_DIR=./migrations
+            export TYPEORM_ENTITIES=./modules/domain/**/*.entity{.ts,.js}
+            export TYPEORM_MIGRATIONS=./migrations/*.ts
+
+            cd .circleci/ansible
+            cat inventory.txt
+            ansible-playbook -i inventory.txt deploy-backend.yml
+      # Here's where you will add some code to rollback on failure  
+      - destroy-environment
+      - revert-migrations
   #smoke-test:
     #docker:
       # Lightweight Docker image 
@@ -431,8 +455,8 @@ workflows:
           requires: [configure-infrastructure]
       - deploy-frontend:
           requires: [run-migrations]
-      #- deploy-backend:
-          #requires: [run-migrations]
+      - deploy-backend:
+          requires: [run-migrations]
       #- smoke-test:
           #requires: [deploy-backend, deploy-frontend]
       #- cloudfront-update:
